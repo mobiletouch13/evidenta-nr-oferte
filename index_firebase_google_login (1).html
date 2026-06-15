@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evidență Oferte</title>
+  <!-- SheetJS pentru export XLSX -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ===== RESET & VARIABILE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F0F2F5;
+      --surface:   #FFFFFF;
+      --border:    #D8DCE4;
+      --accent:    #1A56DB;
+      --accent-dk: #1340B0;
+      --danger:    #C0392B;
+      --warn:      #D97706;
+      --success:   #16A34A;
+      --text:      #1C1E22;
+      --muted:     #6B7280;
+      --radius:    8px;
+      --shadow:    0 1px 4px rgba(0,0,0,.10);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: var(--accent);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
+    }
+    header .logo { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+    header .sub  { font-size: 12px; opacity: .75; }
+    header { justify-content: space-between; flex-wrap: wrap; }
+    .auth-box { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .auth-user { font-size: 13px; opacity: .9; }
+    .login-panel {
+      max-width: 520px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    .login-panel p { color: var(--muted); margin-bottom: 16px; }
+
+    /* ===== LAYOUT ===== */
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    /* ===== FORMULAR ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-weight: 500; font-size: 13px; color: var(--muted); }
+    .form-group input,
+    .form-group textarea {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      font-family: inherit;
+      background: #FAFBFD;
+      transition: border-color .15s;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+    }
+    .form-group input.error,
+    .form-group textarea.error { border-color: var(--danger); }
+    .form-group .err-msg { font-size: 12px; color: var(--danger); display: none; }
+    .form-group .err-msg.visible { display: block; }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+    .nr-preview {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      background: #EEF3FF;
+      border: 1.5px dashed var(--accent);
+      border-radius: 6px;
+      padding: 8px 14px;
+      letter-spacing: .5px;
+      font-family: 'Courier New', monospace;
+    }
+    .form-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+
+    /* ===== BUTOANE ===== */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .15s, transform .08s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary  { background: var(--accent);   color: #fff; }
+    .btn-primary:hover  { background: var(--accent-dk); }
+    .btn-success  { background: var(--success);  color: #fff; }
+    .btn-success:hover  { background: #14803A; }
+    .btn-warn     { background: var(--warn);     color: #fff; }
+    .btn-warn:hover     { background: #B45309; }
+    .btn-danger   { background: var(--danger);   color: #fff; }
+    .btn-danger:hover   { background: #9B2420; }
+    .btn-ghost    { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover    { background: var(--border); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* ===== TOOLBAR TABEL ===== */
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+    .search-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      width: 260px;
+      max-width: 100%;
+      background: #FAFBFD;
+    }
+    .search-box:focus { outline: none; border-color: var(--accent); }
+
+    /* ===== TABEL ===== */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: #F5F7FA; }
+    th {
+      text-align: left; padding: 10px 12px;
+      font-weight: 600; color: var(--muted);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: #F5F7FA; }
+    .badge-nr {
+      font-family: 'Courier New', monospace;
+      font-weight: 700; font-size: 12px;
+      background: #EEF3FF; color: var(--accent);
+      padding: 2px 7px; border-radius: 4px;
+    }
+    .sum-cell { font-weight: 600; white-space: nowrap; }
+    .empty-state {
+      text-align: center; padding: 40px 20px;
+      color: var(--muted); font-size: 14px;
+    }
+    .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,.22);
+      padding: 24px;
+      max-width: 480px; width: 95%;
+      animation: pop .15s ease;
+    }
+    @keyframes pop { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal h3 { font-size: 16px; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1C1E22; color: #fff;
+      padding: 10px 18px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .2s, transform .2s;
+      z-index: 200;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      display: flex; gap: 20px; flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .stat { font-size: 13px; color: var(--muted); }
+    .stat strong { color: var(--text); }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .search-box { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">AR · Evidență Oferte</div>
+    <div class="sub">Generare și gestionare numere de ofertă</div>
+  </div>
+  <div class="auth-box">
+    <span class="auth-user" id="authUser">Neautentificat</span>
+    <button class="btn btn-success btn-sm" id="btnLogin" onclick="loginGoogle()">Login cu Google</button>
+    <button class="btn btn-ghost btn-sm" id="btnLogout" onclick="logoutGoogle()" style="display:none">Logout</button>
+  </div>
+</header>
+
+<div class="card login-panel" id="loginPanel">
+  <h2>Autentificare necesară</h2>
+  <p>Pentru a vedea și gestiona ofertele, autentifică-te cu contul Google autorizat.</p>
+  <button class="btn btn-success" onclick="loginGoogle()">Login cu Google</button>
+</div>
+
+<div class="container" id="appContainer" style="display:none">
+
+  <!-- ===== FORMULAR OFERTĂ ===== -->
+  <div class="card" id="formCard">
+    <h2 id="formTitle">&#43; Ofertă nouă</h2>
+    <div class="form-grid">
+
+      <!-- Număr ofertă (generat automat) -->
+      <div class="form-group" style="grid-column: span 2;">
+        <label>Număr ofertă generat</label>
+        <div class="nr-preview" id="nrPreview">—</div>
+      </div>
+
+      <!-- Nume Client -->
+      <div class="form-group">
+        <label for="fClient">Nume Client <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fClient" placeholder="ex. Ionescu S.R.L." autocomplete="off" />
+        <span class="err-msg" id="errClient">Câmpul este obligatoriu.</span>
+      </div>
+
+      <!-- Obiectiv -->
+      <div class="form-group">
+        <label for="fObiectiv">Obiectiv <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fObiectiv" placeholder="ex. Casă rezidențială P+1" autocomplete="off" />
+        <span class="err-msg" id="errObiectiv">Câmpul este obligatoriu.</span>
+      </div>
+
+      <!-- Sumă -->
+      <div class="form-group">
+        <label for="fSuma">Sumă fără TVA (€) <span style="color:var(--danger)">*</span></label>
+        <input type="number" id="fSuma" placeholder="ex. 12500" min="0" step="0.01" />
+        <span class="err-msg" id="errSuma">Introduceți o valoare numerică pozitivă.</span>
+      </div>
+
+      <!-- Detalii -->
+      <div class="form-group" style="grid-column: span 2;">
+        <label for="fDetalii">Detalii (opțional)</label>
+        <textarea id="fDetalii" placeholder="Notițe suplimentare, condiții, termene..."></textarea>
+      </div>
+
+    </div>
+
+    <!-- Butoane formular -->
+    <div class="form-actions">
+      <button class="btn btn-primary" id="btnGenereaza" onclick="genereazaOferta()">
+        &#9998; Generează ofertă
+      </button>
+      <button class="btn btn-success" id="btnSalveaza" onclick="salveazaOferta()" style="display:none">
+        &#10003; Salvează
+      </button>
+      <button class="btn btn-ghost" id="btnAnuleaza" onclick="anuleazaEdit()" style="display:none">
+        ✕ Anulează
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== TABEL OFERTE ===== -->
+  <div class="card">
+    <h2>&#128196; Oferte înregistrate</h2>
+
+    <!-- Statistici rapide -->
+    <div class="stats-bar">
+      <div class="stat">Total: <strong id="statTotal">0</strong></div>
+      <div class="stat">Valoare totală: <strong id="statValoare">0 €</strong></div>
+    </div>
+
+    <!-- Bară toolbar: căutare + export + backup -->
+    <div class="toolbar">
+      <input class="search-box" type="search" id="searchBox"
+             placeholder="&#128269; Caută după client, obiectiv, număr..."
+             oninput="filtreaza()" />
+      <div class="toolbar-right">
+        <button class="btn btn-warn btn-sm" onclick="exportExcel()" title="Export XLSX (necesită conexiune pentru librărie)">
+          &#128196; Export Excel
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+          &#128196; Export CSV
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="exportBackupJSON()">
+          &#8659; Backup JSON
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importFile').click()">
+          &#8657; Import JSON
+        </button>
+        <!-- Input ascuns pentru import -->
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackupJSON(event)" />
+      </div>
+    </div>
+
+    <!-- Tabelul propriu-zis -->
+    <div class="table-wrap">
+      <table id="tabelOferte">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nr. Ofertă</th>
+            <th>Client</th>
+            <th>Obiectiv</th>
+            <th>Sumă (€ fără TVA)</th>
+            <th>Detalii</th>
+            <th>Data</th>
+            <th>Acțiuni</th>
+          </tr>
+        </thead>
+        <tbody id="tabelBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState">
+        <div class="icon">📋</div>
+        <div>Nicio ofertă înregistrată. Generează prima ofertă mai sus.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== MODAL CONFIRMARE ȘTERGERE ===== -->
+<div class="modal-backdrop" id="modalStergere">
+  <div class="modal">
+    <h3>🗑️ Confirmare ștergere</h3>
+    <p>Ești sigur că vrei să ștergi oferta <strong id="modalNrOferta"></strong>?<br>
+       Această acțiune nu poate fi anulată.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="inchideModal()">Anulează</button>
+      <button class="btn btn-danger" id="btnConfirmStergere">Șterge</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL CONFIRMARE IMPORT ===== -->
+<div class="modal-backdrop" id="modalImport">
+  <div class="modal">
+    <h3>⚠️ Import backup JSON</h3>
+    <p id="modalImportMsg"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="inchideModalImport()">Anulează</button>
+      <button class="btn btn-warn" id="btnImportSuprascriere" onclick="execImport('suprascrie')">
+        Suprascrie datele existente
+      </button>
+      <button class="btn btn-success" id="btnImportCombina" onclick="execImport('combina')">
+        Combină cu datele existente
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST NOTIFICARE ===== -->
+<div id="toast"></div>
+
+<script type="module">
+/* =====================================================
+   FIREBASE CONFIG
+   Înlocuiește valorile de mai jos cu valorile tale din Firebase Console:
+   Project settings → General → Your apps → Firebase SDK snippet → Config
+   ===================================================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+  writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "PUNE_API_KEY_AICI",
+  authDomain: "PUNE_AUTH_DOMAIN_AICI",
+  projectId: "PUNE_PROJECT_ID_AICI",
+  storageBucket: "PUNE_STORAGE_BUCKET_AICI",
+  messagingSenderId: "PUNE_MESSAGING_SENDER_ID_AICI",
+  appId: "PUNE_APP_ID_AICI"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+const colectieOferte = collection(db, "oferte");
+
+/* =====================================================
+   STARE GLOBALĂ
+   ===================================================== */
+let oferte     = [];         // lista tuturor ofertelor, încărcată din Firebase
+let editIndex  = null;       // indexul ofertei aflate în editare
+let nrCurent   = null;       // numărul generat, în așteptare
+let importData = null;       // datele JSON importate temporar
+let indexDeSters = null;
+let toastTimer;
+let userCurent = null;
+
+/* =====================================================
+   AUTENTIFICARE GOOGLE + INIT FIREBASE
+   ===================================================== */
+async function loginGoogle() {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error(err);
+    toast('Autentificarea Google a eșuat. Verifică Authorized domains în Firebase.', 'warn');
+  }
+}
+
+async function logoutGoogle() {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    console.error(err);
+    toast('Logout eșuat.', 'warn');
+  }
+}
+
+function seteazaInterfataAutentificare(user) {
+  userCurent = user;
+  const logat = !!user;
+
+  document.getElementById('loginPanel').style.display = logat ? 'none' : 'block';
+  document.getElementById('appContainer').style.display = logat ? 'block' : 'none';
+  document.getElementById('btnLogin').style.display = logat ? 'none' : '';
+  document.getElementById('btnLogout').style.display = logat ? '' : 'none';
+  document.getElementById('authUser').textContent = logat
+    ? (user.displayName || user.email || 'Autentificat')
+    : 'Neautentificat';
+}
+
+async function incarcaOferte() {
+  if (!userCurent) return;
+
+  try {
+    const q = query(colectieOferte, orderBy("createdAt", "asc"));
+    const snapshot = await getDocs(q);
+
+    oferte = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data()
+    }));
+
+    randeazaTabel();
+  } catch (err) {
+    console.error(err);
+    toast('Nu s-au putut încărca ofertele din Firebase. Verifică regulile Firestore și autentificarea.', 'warn');
+    randeazaTabel();
+  }
+}
+
+onAuthStateChanged(auth, async (user) => {
+  seteazaInterfataAutentificare(user);
+  if (user) {
+    await incarcaOferte();
+  } else {
+    oferte = [];
+    randeazaTabel();
+  }
+});
+
+/* =====================================================
+   GENERARE NUMĂR OFERTĂ
+   Format: AR-O-[zi][luna].[an2] cu sufix dacă există duplicate
+   ===================================================== */
+function genereazaNr() {
+  const azi   = new Date();
+  const zi    = azi.getDate();
+  const luna  = azi.getMonth() + 1;
+  const an2   = String(azi.getFullYear()).slice(-2);
+
+  const baza  = `AR-O-${zi}${luna}.${an2}`;
+
+  const existente = oferte
+    .filter(o => o.nr === baza || o.nr.startsWith(baza + '-'))
+    .map(o => {
+      const m = o.nr.match(/-(\d{3})$/);
+      return m ? parseInt(m[1], 10) : 0;
+    });
+
+  if (existente.length === 0) return baza;
+
+  const maxSufix = Math.max(...existente);
+  const urm = maxSufix + 1;
+
+  return `${baza}-${String(urm).padStart(3, '0')}`;
+}
+
+function genereazaOferta() {
+  nrCurent = genereazaNr();
+  document.getElementById('nrPreview').textContent = nrCurent;
+  document.getElementById('btnGenereaza').style.display = 'none';
+  document.getElementById('btnSalveaza').style.display  = '';
+  document.getElementById('btnAnuleaza').style.display  = '';
+  document.getElementById('fClient').focus();
+}
+
+/* =====================================================
+   VALIDARE FORMULAR
+   ===================================================== */
+function valideazaForm() {
+  let ok = true;
+
+  const client  = document.getElementById('fClient');
+  const obiectiv= document.getElementById('fObiectiv');
+  const suma    = document.getElementById('fSuma');
+
+  [client, obiectiv, suma].forEach(el => el.classList.remove('error'));
+  document.querySelectorAll('.err-msg').forEach(el => el.classList.remove('visible'));
+
+  if (!client.value.trim()) {
+    client.classList.add('error');
+    document.getElementById('errClient').classList.add('visible');
+    ok = false;
+  }
+  if (!obiectiv.value.trim()) {
+    obiectiv.classList.add('error');
+    document.getElementById('errObiectiv').classList.add('visible');
+    ok = false;
+  }
+  const sumaVal = parseFloat(suma.value);
+  if (isNaN(sumaVal) || sumaVal < 0) {
+    suma.classList.add('error');
+    document.getElementById('errSuma').classList.add('visible');
+    ok = false;
+  }
+  return ok;
+}
+
+/* =====================================================
+   SALVARE OFERTĂ ÎN FIREBASE
+   ===================================================== */
+async function salveazaOferta() {
+  if (!userCurent) { toast('Autentifică-te cu Google înainte de salvare.', 'warn'); return; }
+  if (!valideazaForm()) return;
+
+  const oferta = {
+    nr:       editIndex !== null ? oferte[editIndex].nr : nrCurent,
+    client:   document.getElementById('fClient').value.trim(),
+    obiectiv: document.getElementById('fObiectiv').value.trim(),
+    suma:     parseFloat(document.getElementById('fSuma').value),
+    detalii:  document.getElementById('fDetalii').value.trim(),
+    data:     editIndex !== null
+                ? oferte[editIndex].data
+                : new Date().toLocaleDateString('ro-RO'),
+    createdAt: editIndex !== null
+                ? (oferte[editIndex].createdAt || Date.now())
+                : Date.now()
+  };
+
+  try {
+    if (editIndex !== null) {
+      const id = oferte[editIndex].id;
+      await updateDoc(doc(db, "oferte", id), oferta);
+      toast('Ofertă actualizată cu succes.', 'success');
+    } else {
+      await addDoc(colectieOferte, oferta);
+      toast('Ofertă salvată: ' + oferta.nr, 'success');
+    }
+
+    reseteazaForm();
+    await incarcaOferte();
+  } catch (err) {
+    console.error(err);
+    toast('Eroare la salvarea în Firebase. Verifică regulile Firestore.', 'warn');
+  }
+}
+
+/* =====================================================
+   ȘTERGERE OFERTĂ DIN FIREBASE
+   ===================================================== */
+function stergeOferta(index) {
+  indexDeSters = index;
+  document.getElementById('modalNrOferta').textContent = oferte[index].nr;
+  document.getElementById('modalStergere').classList.add('open');
+
+  document.getElementById('btnConfirmStergere').onclick = async function() {
+    if (!userCurent) { toast('Autentifică-te cu Google înainte de ștergere.', 'warn'); return; }
+    try {
+      const id = oferte[indexDeSters].id;
+      await deleteDoc(doc(db, "oferte", id));
+      await incarcaOferte();
+      inchideModal();
+      toast('Ofertă ștearsă.', 'warn');
+    } catch (err) {
+      console.error(err);
+      toast('Eroare la ștergerea din Firebase.', 'warn');
+    }
+  };
+}
+
+function inchideModal() {
+  document.getElementById('modalStergere').classList.remove('open');
+}
+
+/* =====================================================
+   EDITARE OFERTĂ
+   ===================================================== */
+function editeazaOferta(index) {
+  editIndex = index;
+  const o   = oferte[index];
+
+  document.getElementById('formTitle').textContent   = '✏️ Editare ofertă';
+  document.getElementById('nrPreview').textContent   = o.nr;
+  document.getElementById('fClient').value           = o.client;
+  document.getElementById('fObiectiv').value         = o.obiectiv;
+  document.getElementById('fSuma').value             = o.suma;
+  document.getElementById('fDetalii').value          = o.detalii || '';
+
+  document.getElementById('btnGenereaza').style.display = 'none';
+  document.getElementById('btnSalveaza').style.display  = '';
+  document.getElementById('btnAnuleaza').style.display  = '';
+
+  document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+function anuleazaEdit() {
+  editIndex = null;
+  reseteazaForm();
+}
+
+/* =====================================================
+   RESETARE FORMULAR
+   ===================================================== */
+function reseteazaForm() {
+  nrCurent = null;
+  editIndex = null;
+  document.getElementById('formTitle').textContent   = '+ Ofertă nouă';
+  document.getElementById('nrPreview').textContent   = '—';
+  document.getElementById('fClient').value           = '';
+  document.getElementById('fObiectiv').value         = '';
+  document.getElementById('fSuma').value             = '';
+  document.getElementById('fDetalii').value          = '';
+  document.getElementById('btnGenereaza').style.display = '';
+  document.getElementById('btnSalveaza').style.display  = 'none';
+  document.getElementById('btnAnuleaza').style.display  = 'none';
+  document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+  document.querySelectorAll('.err-msg').forEach(el => el.classList.remove('visible'));
+}
+
+/* =====================================================
+   RANDARE TABEL
+   ===================================================== */
+function randeazaTabel(filtru) {
+  const body  = document.getElementById('tabelBody');
+  const empty = document.getElementById('emptyState');
+
+  let lista = oferte;
+  if (filtru) {
+    const f = filtru.toLowerCase();
+    lista = oferte.filter(o =>
+      String(o.nr || '').toLowerCase().includes(f) ||
+      String(o.client || '').toLowerCase().includes(f) ||
+      String(o.obiectiv || '').toLowerCase().includes(f)
+    );
+  }
+
+  document.getElementById('statTotal').textContent   = oferte.length;
+  document.getElementById('statValoare').textContent =
+    oferte.reduce((s, o) => s + Number(o.suma || 0), 0).toLocaleString('ro-RO') + ' €';
+
+  if (lista.length === 0) {
+    body.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  body.innerHTML = lista.map((o, i) => {
+    const realIdx = oferte.indexOf(o);
+    return `
+    <tr>
+      <td>${i + 1}</td>
+      <td><span class="badge-nr">${esc(o.nr)}</span></td>
+      <td>${esc(o.client)}</td>
+      <td>${esc(o.obiectiv)}</td>
+      <td class="sum-cell">${Number(o.suma || 0).toLocaleString('ro-RO', {minimumFractionDigits:2})} €</td>
+      <td style="max-width:200px;white-space:pre-wrap;word-break:break-word">${esc(o.detalii || '—')}</td>
+      <td style="white-space:nowrap">${esc(o.data)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="editeazaOferta(${realIdx})" title="Editează">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="stergeOferta(${realIdx})" title="Șterge">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filtreaza() {
+  const val = document.getElementById('searchBox').value.trim();
+  randeazaTabel(val || undefined);
+}
+
+/* =====================================================
+   EXPORT CSV
+   ===================================================== */
+function exportCSV() {
+  if (oferte.length === 0) { toast('Nu există oferte de exportat.', 'warn'); return; }
+
+  const sep  = ';';
+  const bom  = '\uFEFF';
+  const cap  = ['Nr. Ofertă','Client','Obiectiv','Sumă (€ fără TVA)','Detalii','Data'].join(sep);
+  const rows = oferte.map(o =>
+    [o.nr, o.client, o.obiectiv, o.suma, o.detalii || '', o.data]
+      .map(v => `"${String(v).replace(/"/g,'""')}"`)
+      .join(sep)
+  );
+
+  const csv  = bom + cap + '\n' + rows.join('\n');
+  descarca(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'oferte.csv');
+  toast('Export CSV realizat.', 'success');
+}
+
+/* =====================================================
+   EXPORT EXCEL
+   ===================================================== */
+function exportExcel() {
+  if (oferte.length === 0) { toast('Nu există oferte de exportat.', 'warn'); return; }
+
+  if (typeof XLSX === 'undefined') {
+    toast('Librăria XLSX nu a putut fi încărcată. Se exportă CSV.', 'warn');
+    exportCSV();
+    return;
+  }
+
+  const date = oferte.map(o => ({
+    'Nr. Ofertă':        o.nr,
+    'Client':            o.client,
+    'Obiectiv':          o.obiectiv,
+    'Sumă (€ fără TVA)': o.suma,
+    'Detalii':           o.detalii || '',
+    'Data':              o.data
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(date);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Oferte');
+  XLSX.writeFile(wb, 'oferte.xlsx');
+  toast('Export Excel realizat.', 'success');
+}
+
+/* =====================================================
+   BACKUP JSON – Export
+   ===================================================== */
+function exportBackupJSON() {
+  if (oferte.length === 0) { toast('Nu există date de exportat.', 'warn'); return; }
+  const oferteFaraId = oferte.map(({ id, ...rest }) => rest);
+  const payload = JSON.stringify({ versiune: 1, data: new Date().toISOString(), oferte: oferteFaraId }, null, 2);
+  descarca(new Blob([payload], { type: 'application/json' }), 'backup_oferte.json');
+  toast('Backup exportat cu succes.', 'success');
+}
+
+/* =====================================================
+   BACKUP JSON – Import în Firebase
+   ===================================================== */
+function importBackupJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const json = JSON.parse(e.target.result);
+      if (!json.oferte || !Array.isArray(json.oferte)) throw new Error('Format invalid');
+      importData = json.oferte;
+
+      const msg = oferte.length > 0
+        ? `Fișierul conține <strong>${importData.length} oferte</strong>. 
+           Ai deja <strong>${oferte.length} oferte</strong> salvate în Firebase.<br><br>
+           Alege modul de import:`
+        : `Fișierul conține <strong>${importData.length} oferte</strong>. 
+           Alege modul de import:`;
+
+      document.getElementById('modalImportMsg').innerHTML = msg;
+      document.getElementById('modalImport').classList.add('open');
+    } catch(err) {
+      toast('Fișier JSON invalid sau corupt.', 'warn');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function inchideModalImport() {
+  document.getElementById('modalImport').classList.remove('open');
+  importData = null;
+}
+
+async function execImport(mod) {
+  if (!userCurent) { toast('Autentifică-te cu Google înainte de import.', 'warn'); return; }
+  if (!importData) return;
+
+  try {
+    if (mod === 'suprascrie') {
+      // Șterge toate documentele existente, apoi importă backup-ul
+      const snapshot = await getDocs(colectieOferte);
+      const batchDelete = writeBatch(db);
+      snapshot.docs.forEach(d => batchDelete.delete(doc(db, "oferte", d.id)));
+      await batchDelete.commit();
+
+      for (const o of importData) {
+        const { id, ...curat } = o;
+        await addDoc(colectieOferte, {
+          ...curat,
+          createdAt: curat.createdAt || Date.now()
+        });
+      }
+      toast(`Import realizat: ${importData.length} oferte (suprascrise).`, 'success');
+    } else {
+      const nrExistente = new Set(oferte.map(o => o.nr));
+      const noi = importData.filter(o => !nrExistente.has(o.nr));
+
+      for (const o of noi) {
+        const { id, ...curat } = o;
+        await addDoc(colectieOferte, {
+          ...curat,
+          createdAt: curat.createdAt || Date.now()
+        });
+      }
+      toast(`Import realizat: ${noi.length} oferte adăugate (${importData.length - noi.length} duplicate ignorate).`, 'success');
+    }
+
+    inchideModalImport();
+    await incarcaOferte();
+  } catch (err) {
+    console.error(err);
+    toast('Eroare la importul în Firebase.', 'warn');
+  }
+}
+
+/* =====================================================
+   UTILITARE
+   ===================================================== */
+function descarca(blob, numeFisier) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = numeFisier;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function toast(mesaj, tip) {
+  const el = document.getElementById('toast');
+  el.textContent = mesaj;
+  el.style.background =
+    tip === 'success' ? '#16A34A' :
+    tip === 'warn'    ? '#D97706' : '#1C1E22';
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+/* Închide modalele la click pe fundal */
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.classList.remove('open');
+      importData = null;
+    }
+  });
+});
+
+/* =====================================================
+   EXPUNERE FUNCȚII GLOBALE
+   Necesare deoarece HTML-ul folosește onclick="..."
+   ===================================================== */
+window.loginGoogle = loginGoogle;
+window.logoutGoogle = logoutGoogle;
+window.genereazaOferta = genereazaOferta;
+window.salveazaOferta = salveazaOferta;
+window.anuleazaEdit = anuleazaEdit;
+window.editeazaOferta = editeazaOferta;
+window.stergeOferta = stergeOferta;
+window.inchideModal = inchideModal;
+window.filtreaza = filtreaza;
+window.exportExcel = exportExcel;
+window.exportCSV = exportCSV;
+window.exportBackupJSON = exportBackupJSON;
+window.importBackupJSON = importBackupJSON;
+window.inchideModalImport = inchideModalImport;
+window.execImport = execImport;
+</script>
+</body>
+</html>
